@@ -19,8 +19,9 @@ static uint8_t hexval[17] = "0123456789ABCDEF";
 void slcan_ack();
 void slcan_nack();
 
+//FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> myCan; //choose wich can used here
 FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> myCan;
-
+//FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> myCan;
 //----------------------------------------------------------------
 
 void send_canmsg(char *buf, boolean rtrFlag) {
@@ -354,31 +355,29 @@ void setup(void)
   Serial.println(F("bps"));
   
   myCan.begin();
-  myCan.setBaudRate(CANBUSSPEED); 
-
-
-
+  myCan.setBaudRate(CANBUSSPEED);
+  
   pars_slcancmd("C/0");
 
   if (!slcan)
   {
-    if (slcan) 
+    if (slcan)
     {
       Serial.println(F("SLCAN     ON"));
     } else {
-      Serial.println(F("SLCAN     OFF")); 
+      Serial.println(F("SLCAN     OFF"));
     }
-    if (cr) 
+    if (cr)
     {
       Serial.println(F("CR        ON"));
     } else {
-      Serial.println(F("CR        OFF")); 
+      Serial.println(F("CR        OFF"));
     }
-    if (timestamp) 
+    if (timestamp)
     {
       Serial.println(F("TIMESTAMP ON"));
     } else {
-      Serial.println(F("TIMESTAMP OFF")); 
+      Serial.println(F("TIMESTAMP OFF"));
     }
   }
 } //setup()
