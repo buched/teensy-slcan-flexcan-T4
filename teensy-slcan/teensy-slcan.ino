@@ -4,17 +4,22 @@
 // Requires FlexCAN library by Collin Kidder, Based on CANTest by Pawelsky (based on CANtest by teachop)
 // From https://github.com/collin80/FlexCAN_Library
 //
-
-#include <FlexCAN.h>
+#include <Arduino.h>
+#include <FlexCAN_T4.h>
 #include <SPI.h>
 
 boolean slcan     = false;
 boolean cr        = false;
 boolean timestamp = false;
 
-int CANBUSSPEED = 500000;
+int CANBUSSPEED = 250000;
 
 static uint8_t hexval[17] = "0123456789ABCDEF";
+
+void slcan_ack();
+void slcan_nack();
+
+FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> myCan;
 
 //----------------------------------------------------------------
 
@@ -24,9 +29,11 @@ void send_canmsg(char *buf, boolean rtrFlag) {
     int msg_id = 0;
     sscanf(&buf[1], "%03x", &msg_id);
     if (rtrFlag) {
-      outMsg.rtr = 1;
+      outMsg.flags.remote = 1;
+      //outMsg.rtr = 1;
     } else {
-      outMsg.ext = 0;
+      //outMsg.ext = 0;
+      outMsg.flags.extended = 0;
     }
     outMsg.id = msg_id;
     int msg_len = 0;
@@ -37,23 +44,23 @@ void send_canmsg(char *buf, boolean rtrFlag) {
       sscanf(&buf[5 + (i*2)], "%02x", &candata);
       outMsg.buf[i] = candata;
     }
-    Can0.write(outMsg);
+    myCan.write(outMsg);
   }
 } // send_canmsg()
 
 // -------------------------------------------------------------
-
 void pars_slcancmd(char *buf)
 {                           // LAWICEL PROTOCOL
   switch (buf[0]) {
     case 'O':               // OPEN CAN
       slcan=true;
-      Can0.begin(CANBUSSPEED);
+      myCan.begin();
+      myCan.setBaudRate(CANBUSSPEED);
       slcan_ack();
       break;
     case 'C':               // CLOSE CAN
       slcan=false;
-      Can0.end();
+    //  Can0.end();
       slcan_ack();
       break;
     case 't':               // send std frame
@@ -277,12 +284,19 @@ void xfer_can2tty()
   String command = "";
   long time_now = 0;
   CAN_message_t inMsg;
-  while (Can0.available()) 
-  {
+  //while (myCan.available()) 
+  //{
+    
     if (slcan) {
-      Can0.read(inMsg);
-      if((inMsg.id & 0x80000000) == 0x80000000) {
-        if ((inMsg.id & 0x40000000) == 0x40000000) {
+      myCan.read(inMsg);
+      
+      // return if msgid is zero (there are no messages available)
+      if (inMsg.id == 0){ 
+        return;
+      }
+      
+      if((inMsg.flags.extended) == true) {
+        if ((inMsg.flags.remote) == true) {
           command = command + "R";
         } else {
           command = command + "T";
@@ -297,7 +311,7 @@ void xfer_can2tty()
         command = command + char(hexval[ inMsg.id&15]);
         command = command + char(hexval[ inMsg.len ]);
       } else {
-        if ((inMsg.id & 0x40000000) == 0x40000000) {
+           if ((inMsg.flags.remote) == true) {
           command = command + "r";
         } else {
           command = command + "t";
@@ -323,7 +337,7 @@ void xfer_can2tty()
       Serial.print(command);
       if (cr) Serial.println("");
     }
-  }
+ // }
 }
 
 // -------------------------------------------------------------
@@ -339,11 +353,10 @@ void setup(void)
   Serial.print(CANBUSSPEED);
   Serial.println(F("bps"));
   
-  Can0.begin(CANBUSSPEED);  
+  myCan.begin();
+  myCan.setBaudRate(CANBUSSPEED); 
 
-  //if using enable pins on a transceiver they need to be set on
-  pinMode(28, OUTPUT);
-  digitalWrite(28, LOW);
+
 
   pars_slcancmd("C/0");
 
