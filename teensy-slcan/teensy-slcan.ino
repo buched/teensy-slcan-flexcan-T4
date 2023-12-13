@@ -19,7 +19,7 @@ static uint8_t hexval[17] = "0123456789ABCDEF";
 void slcan_ack();
 void slcan_nack();
 
-//FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> myCan; //choose wich can used here
+//FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> myCan; //choose wich can used on you pcb
 FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> myCan;
 //FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> myCan;
 //----------------------------------------------------------------
